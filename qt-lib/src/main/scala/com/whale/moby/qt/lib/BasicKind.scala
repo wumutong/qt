@@ -203,6 +203,33 @@ object BasicKind extends java.io.Serializable {
 
     marginSql
   }
+  /*
+  *缺失场景（2）：
+  *1.时间范围分区主分区下-有-指定分区 比如 srv_name srv_uri
+  *2.或者有指定分区 上下 时间范围分区 比如： 单个分区：20200107-stat_date【上报日期】 有 20200101-20200107之间的业务日期dt
+  *参数模式设计：
+  *分时间和指定分区模式选择参数： optDate , optOthers
+  *optDate : 需指定和主分区的时间关系和分区字段名称  如： 单个分区：20200107-stat_date【上报日期】 有 20200101-20200107之间的业务日期dt
+  *示例：建议定制
+  *optOthers : 需指定 副分区字段名称 以逗号分割
+  *示例： srv_name,srv_url
+  * */
+
+  //定义一个方法：有关把 定义相关主分区下 指定分区的相关实现  后合并 剔除相关共用方法
+  def deletionDateCheckSqls(): Unit ={
+
+
+
+  }
+
+
+
+
+
+
+
+
+
 
   //缺失检查
   //判定缺失
