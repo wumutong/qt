@@ -6,7 +6,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 
-object MainApplication {
+object Main2Application {
   def main(args: Array[String]): Unit = {
     // Starting Point
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -21,16 +21,26 @@ object MainApplication {
     import spark.implicits._
 
 
+    val dsNames = qtObject.split(" ")
+    val (dsName1, dsName2) = (dsNames(0), dsNames(1))
+    // val df = spark.sql(qtContent)
+    // val df1 = spark.sql(qtContent)
+    // val df2 = spark.sql(qtContent2)
+
+
+    // 数据集转装载
+    val df1 = if (scene == "scene1") spark.sql(qtContent) else spark.sql(qtContent).select(dsName1)
+    val df2 = if (scene == "scene1") spark.sql(qtContent2) else spark.sql(qtContent).select(dsName2)
+
+
     // 获取QIN
     val dateTimeTuple = Utils.getDateTimeQin(qtMethod)
     // 组装样本数据
+    val (dropDuplicateSQL1, dropDuplicateSQL2) = (DataKind.dropDuplicateSQL(df1, dsName1), DataKind.dropDuplicateSQL(df2, dsName2))
+    val (dropDuplicateDF1, dropDuplicateDF2) = (spark.sql(dropDuplicateSQL1), spark.sql(dropDuplicateSQL2))
     val methodTuple = (qtCategory, qtMethod, scene)
-    val sampleSQL = matchSQL(methodTuple, spark, qtContent, dsDate)
-    val sampleDF = spark.sql(sampleSQL)
-
-
     // 检测样本数据
-    val checkedDF = matchMethod(methodTuple, sampleDF, qtObject)
+    val checkedDF = matchMethod2(methodTuple, dropDuplicateDF1, dropDuplicateDF2, qtObject)
     // 格式化样本数据
     val jsonSQL = Utils.toJSON(checkedDF)
     // 封装明细数据
@@ -72,4 +82,3 @@ object MainApplication {
     spark.stop()
   }
 }
-

@@ -109,43 +109,4 @@ object Utils extends java.io.Serializable {
     arrayDate
   }
 
-
-  //定义可变元组
-  def xyTuple(): Unit ={
-
-  }
-
-
-
-
-  //结合上述生成-最大时间与最小时间,添加指定分区
-  //格式：
-  //示例1： 如果两个分区有关联：srv_name下有指定的srv_uri
-  //srv_name:srv_uri%xxx=xxxx,xxxx,xxxx;
-  def addOptPartitionParams(arrayList:ArrayBuffer[String],params:String): Unit ={
-    //判定有多少分区
-    val partitions : Array[String] = params.split(";")
-
-    //
-    val arrayDate = new ArrayBuffer[(String,String)]()
-
-
-
-    //迭代遍历时间集合
-    val it = partitions.iterator
-    while(it.hasNext){
-
-      val tuple: (String, String, String) = (it.next, "1", "1")
-      arrayDate.append(tuple)
-
-
-
-    }
-
-
-
-  }
-
-
-
 }

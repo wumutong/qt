@@ -47,7 +47,6 @@ object BasicKind extends java.io.Serializable {
   val computeExpressionUDF = udf(computeExpression _)
 
 
-
   // 检查是否有重复
   private def DuplicateDataCheck(y:String):String = {
     val checkResult = if (y == "1") "通过" else "不通过"
@@ -64,6 +63,10 @@ object BasicKind extends java.io.Serializable {
   val deletionDataCheck = udf(DeletionDataCheck _)
 
 
+  /**
+   * 样本送检
+   * 包含多种质检方法送检过程，每种质检方法包含多个场景
+   */
   // 值域样本送检
   // 场景1
   def rangeSampleInspection(sampleDF: DataFrame, qtObject: String, lowerLimit: Double, upperLimit: Double): DataFrame = {
@@ -94,7 +97,6 @@ object BasicKind extends java.io.Serializable {
     checkedDF.drop("x")
   }
 
-
   // 空值样本送检
   // 场景1
   def nullSampleInspection(sampleDF: DataFrame, qtObject: String): DataFrame = {
@@ -102,7 +104,6 @@ object BasicKind extends java.io.Serializable {
     val checkedDF = sampleDF.withColumn("result", nullCheckUDF(col("null_check_" + qtObject))).drop("null_check_" + qtObject)
     checkedDF
   }
-
 
   // 异常值样本送检
   // 场景1
@@ -203,33 +204,6 @@ object BasicKind extends java.io.Serializable {
 
     marginSql
   }
-  /*
-  *缺失场景（2）：
-  *1.时间范围分区主分区下-有-指定分区 比如 srv_name srv_uri
-  *2.或者有指定分区 上下 时间范围分区 比如： 单个分区：20200107-stat_date【上报日期】 有 20200101-20200107之间的业务日期dt
-  *参数模式设计：
-  *分时间和指定分区模式选择参数： optDate , optOthers
-  *optDate : 需指定和主分区的时间关系和分区字段名称  如： 单个分区：20200107-stat_date【上报日期】 有 20200101-20200107之间的业务日期dt
-  *示例：建议定制
-  *optOthers : 需指定 副分区字段名称 以逗号分割
-  *示例： srv_name,srv_url
-  * */
-
-  //定义一个方法：有关把 定义相关主分区下 指定分区的相关实现  后合并 剔除相关共用方法
-  def deletionDateCheckSqls(): Unit ={
-
-
-
-  }
-
-
-
-
-
-
-
-
-
 
   //缺失检查
   //判定缺失
@@ -266,6 +240,5 @@ object BasicKind extends java.io.Serializable {
     val computedDf = frame
     computedDf
   }
-
 }
 
