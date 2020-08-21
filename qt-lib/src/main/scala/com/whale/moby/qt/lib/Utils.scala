@@ -31,39 +31,32 @@ object Utils extends java.io.Serializable {
 
   //改变时间格式
   def changeDateTimeFormat(min: String,max:String):(String,String)={
-    val minFormat = if(min.contains("-")){
-      min.replace("-","")
+    val conMinMax = min+","+max
+
+    val conMinMaxFoemat = if(conMinMax.contains("-")){
+      conMinMax.replace("-","")
     }else if(min.contains("/")){
-      min.replace("/","")
+      conMinMax.replace("/","")
     }else{
-      min
+      conMinMax
     }
-
-    val maxFormat = if(max.contains("-")){
-      max.replace("-","")
-    }else if(max.contains("/")){
-      max.replace("/","")
-    }else{
-      max
-    }
-
-    (minFormat,maxFormat)
+    (conMinMaxFoemat.split(",")(0),conMinMaxFoemat.split(",")(1))
   }
 
   //得到对应得时间格式
   def getDateFormat(minFormat:String,maxFormat:String):(SimpleDateFormat,String)={
     var flag = "month"
-    val format: SimpleDateFormat = if (minFormat.length == 6 && maxFormat.length == 6) {
-      flag = "month"
-      new SimpleDateFormat("yyyyMM")
-    } else if (minFormat.length == 8 && maxFormat.length == 8) {
+    var formatStr = "yyyyMM"
+
+     if (minFormat.length == 8 && maxFormat.length == 8) {
       flag = "day"
-      new SimpleDateFormat("yyyyMMdd")
+      formatStr += "dd"
     } else {
       flag = "hour"
-      new SimpleDateFormat("yyyyMMddHH")
+      formatStr += "ddHH"
     }
-    (format,flag)
+
+    (new SimpleDateFormat(formatStr),flag)
   }
 
 
