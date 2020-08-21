@@ -1,4 +1,5 @@
 rootProject.name = 'qt'
 include 'qt-lib'
 include 'qt-mobel'
+include 'qt-rule'
 

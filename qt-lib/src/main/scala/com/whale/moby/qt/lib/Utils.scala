@@ -1,23 +1,21 @@
 package com.whale.moby.qt.lib
 
-import java.text.SimpleDateFormat
-
 import org.apache.spark.sql.DataFrame
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.{Calendar, Date}
-
+import java.text.SimpleDateFormat
 import scala.collection.mutable.ArrayBuffer
 
 
 object Utils extends java.io.Serializable {
   // 获取日期，Unix时间戳，并生成质检单号QIN （Quality inspection number）
-  def getDateTimeQin(qtMethod: String): (Long, String, String) = {
+  def getDateTimeQin(qtMethod: String, scene: String): (Long, String, String) = {
     val localDateTime = LocalDateTime.now
     val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     val unixTimestamp = java.sql.Timestamp.valueOf(localDateTime).getTime()
     val today = localDateTime.format(formatter)
-    val qin  = qtMethod + "-" + unixTimestamp
+    val qin  = qtMethod + "-" + scene + "-" + unixTimestamp
     (unixTimestamp, today, qin)
   }
   // 转换样本数据为JSON格式
@@ -110,3 +108,4 @@ object Utils extends java.io.Serializable {
   }
 
 }
+

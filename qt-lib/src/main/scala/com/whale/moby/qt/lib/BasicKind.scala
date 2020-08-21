@@ -3,18 +3,25 @@ package com.whale.moby.qt.lib
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import scala.collection.mutable.ListBuffer
 import javax.script.ScriptEngineManager
 import org.apache.spark.sql.expressions.Window
-
 import scala.collection.mutable.ArrayBuffer
 
 
 object BasicKind extends java.io.Serializable {
-  // 质检方法
+  /**
+   * 质检方法
+   */
   // 值域检查 - 数值型
-  private def rangeCheck(y: Double, minValue: Double, maxValue: Double): String = {
-    val checkResult = if (y >= minValue && y <= maxValue) "值域内数据" else "非值域内数据"
-    checkResult
+  private def rangeCheck(minValue: Double, maxValue: Double, seq: Seq[Double]) = {
+    val resultList = ListBuffer[String]()
+    for (i <- seq){
+      val result = if (i >= minValue && i <= maxValue) "值域内数据" else "非值域内数据"
+      resultList += result
+    }
+    val finalResult = if (resultList.contains("非值域内数据")) "值域检测不通过" else "值域检测通过"
+    finalResult
   }
   val rangeCheckUDF = udf(rangeCheck _)
   // 空值检测 - 布尔型
@@ -30,6 +37,18 @@ object BasicKind extends java.io.Serializable {
     checkResult
   }
   val outliersCheckUDF = udf(outliersCheck _)
+  // 重复值检测 -
+  private def DuplicateDataCheck(y: String): String = {
+    val checkResult = if (y == "1") "通过" else "不通过"
+    checkResult
+  }
+  val uplicateDataCheckUdf = udf(DuplicateDataCheck _)
+  // 缺失值检测 -
+  private def DeletionDataCheck(y:String):String = {
+    val checkResult = if (y == "0") "不通过" else "通过"
+    checkResult
+  }
+  val deletionDataCheck = udf(DeletionDataCheck _)
 
 
   // 线性代数 - 表达式计算
@@ -47,22 +66,6 @@ object BasicKind extends java.io.Serializable {
   val computeExpressionUDF = udf(computeExpression _)
 
 
-  // 检查是否有重复
-  private def DuplicateDataCheck(y:String):String = {
-    val checkResult = if (y == "1") "通过" else "不通过"
-    checkResult
-  }
-
-  val uplicateDataCheckUdf = udf(DuplicateDataCheck _)
-
-  // 检查数据是否有缺失
-  private def DeletionDataCheck(y:String):String = {
-    val checkResult = if (y == "0") "不通过" else "通过"
-    checkResult
-  }
-  val deletionDataCheck = udf(DeletionDataCheck _)
-
-
   /**
    * 样本送检
    * 包含多种质检方法送检过程，每种质检方法包含多个场景
@@ -72,28 +75,33 @@ object BasicKind extends java.io.Serializable {
   def rangeSampleInspection(sampleDF: DataFrame, qtObject: String, lowerLimit: Double, upperLimit: Double): DataFrame = {
     // 预检处理
     // 检测样本数据
-    val checkedDF = sampleDF.withColumn("result", BasicKind.rangeCheckUDF(col(qtObject), lit(lowerLimit), lit(upperLimit)))
+    val cols = qtObject.split(" ")
+    val arrCols = array(cols map col: _*)
+    val checkedDF = sampleDF.withColumn("result", rangeCheckUDF(lit(lowerLimit),lit(upperLimit), arrCols))
     checkedDF
   }
   // 场景2
-  def rangeSampleInspection(sampleDF: DataFrame, qtObject: String, lowerLimit: String, upperLimit: String): DataFrame = {
+  def rangeSampleInspection(sampleDF: DataFrame, objectArray: Array[String], lowerLimit: String, upperLimit: String): DataFrame = {
     // 预检处理
-    val y = qtObject.split(" ")(0)
-    val x = qtObject.split(" ")(1)
+    val y = objectArray(0)
+    val x = objectArray(1)
     // 检测样本数据
     // 表达式计算
     val computedDF = sampleDF.withColumn("minvalue", computeExpressionUDF(col(x), lit(lowerLimit))).withColumn("maxvalue", computeExpressionUDF(col(x), lit(upperLimit)))
     // 值域检查
-    val checkedDF = computedDF.withColumn("result", BasicKind.rangeCheckUDF(col(y), col("minvalue"), col("maxvalue"))).drop("minvalue").drop("maxvalue")
+    val arrCols = array(y)
+    val checkedDF = computedDF.withColumn("result", rangeCheckUDF(col("minvalue"), col("maxvalue"), arrCols)).drop("minvalue").drop("maxvalue")
     checkedDF
   }
   // 场景3
-  def rangeSampleInspection(sampleDF: DataFrame, qtObject: String, lowerLimit: String, upperLimit: String, scene: String): DataFrame = {
+  def rangeSampleInspection(sampleDF: DataFrame, qtObject: String, lowerLimit: String, upperLimit: String): DataFrame = {
     // 检测质检样本数据
     // 表达式计算
     val computedDF = sampleDF.withColumn("minvalue", computeExpressionUDF(col("x"), lit(lowerLimit))).withColumn("maxvalue", computeExpressionUDF(col("x"), lit(upperLimit)))
     // 值域检查
-    val checkedDF = computedDF.withColumn("result", BasicKind.rangeCheckUDF(col(qtObject), col("minvalue"), col("maxvalue"))).drop("minvalue").drop("maxvalue")
+    val cols = qtObject.split(" ")
+    val arrCols = array(cols map col: _*)
+    val checkedDF = computedDF.withColumn("result", rangeCheckUDF(col("minvalue"), col("maxvalue"), arrCols)).drop("minvalue").drop("maxvalue")
     checkedDF.drop("x")
   }
 
@@ -116,10 +124,29 @@ object BasicKind extends java.io.Serializable {
     checkedDF
   }
 
+  // 重复值样本送检
+  // 场景1+2 检查一行中全部的数据看是否有重复(或者检测一列中是否有重复的值)
+  def duplicateDataSampleInspection(sampleDF: DataFrame,num:String="num"): DataFrame = {
+    // 检测质检样本数据
+    val frame: DataFrame = sampleDF.withColumn("result", BasicKind.uplicateDataCheckUdf(col(num)))
+    // 表达式计算
+    val computedDf = frame
+    computedDf
+  }
+  // 缺失值样本送检
+  def deletionDateSampleInspection(sampleDF: DataFrame): DataFrame = {
+    // 检测质检样本数据
+    val frame: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag")))
+    // 表达式计算
+    val computedDf = frame
+    computedDf
+  }
+
+
 
   // 特定场景处理
   // 波动比SQL
-  def waveSQL(spark: SparkSession, qtContent: String, dsDate: String) = {
+  def waveSQL(spark: SparkSession, qtContent: String, qtObject: String, dsDate: String) = {
     // 改写SQL
     val currentDF = spark.sql(qtContent)
     val aDayAgo = (dsDate.toLong -1).toString
@@ -146,7 +173,6 @@ object BasicKind extends java.io.Serializable {
     val sampleSQL = qtContent.replaceAll("from", isnullStatement)
     sampleSQL
   }
-
   //重复值重组Sql   Scene1 全部一行判定是否重复【除分区】
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String):String={
     // 改写SQL
@@ -155,7 +181,6 @@ object BasicKind extends java.io.Serializable {
     val  RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
     RepeatSQL
   }
-
   //重复值重组Sql   Scene2 指定一列判断
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 改写SQL
@@ -164,7 +189,6 @@ object BasicKind extends java.io.Serializable {
     val  RepeatSQL  = "select *,count(1) over (partition by "+ qtObject +") as num from meta_duplicateData2"
     RepeatSQL
   }
-
   //缺失重组Sql  Scene指定一列分区进行判断
   def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 改写SQL
@@ -176,23 +200,30 @@ object BasicKind extends java.io.Serializable {
     //获取场景3 单列时间的最大时间，最小时间
     val stringsMin: Array[String] = RepeatDF.select("mins").collect().map(_ (0).toString)
     val mins: String = stringsMin(0)
-
     val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
     val maxs: String = stringsMax(0)
-
     // 转换格式 , 应对所取格式
     val minFormat = Utils.changeDateTimeFormat(mins,maxs)._1
     val maxFormat = Utils.changeDateTimeFormat(mins,maxs)._2
-
     //创建相关基列列表
     val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(minFormat, maxFormat).map(x => {
       (x.toInt, 1)
     })
-
+    //缺失检查
+    //判定缺失
+    def deletionDateInspection(RepeatDF:DataFrame):DataFrame={
+      val checkedDF: DataFrame = BasicKind.deletionDateSampleInspection(RepeatDF)
+      checkedDF
+    }
+    //重复值检查
+    //判定重复
+    def duplicateDataInspection(RepeatDF:DataFrame):DataFrame={
+      val checkedDF: DataFrame = BasicKind.duplicateDataSampleInspection(RepeatDF,"num")
+      checkedDF
+    }
     //创建 针对基列的 dateFrame
     val frameBase: DataFrame = spark.createDataFrame(dateTuple).toDF("dateTag", "tags")
     frameBase.createOrReplaceTempView("baseTable")
-
     //判定sql  如果 tags=0 即该天为缺失
     val marginSql: String =
       "select step1.dateTag as dateTag,count(step2.date2) as tag" +
@@ -205,40 +236,6 @@ object BasicKind extends java.io.Serializable {
     marginSql
   }
 
-  //缺失检查
-  //判定缺失
-  def deletionDateInspection(RepeatDF:DataFrame):DataFrame={
-    val checkedDF: DataFrame = BasicKind.deletionDateSampleInspection(RepeatDF)
-    checkedDF
-  }
 
-
-  //重复值检查
-  //判定重复
-  def duplicateDataInspection(RepeatDF:DataFrame):DataFrame={
-    val checkedDF: DataFrame = BasicKind.duplicateDataSampleInspection(RepeatDF,"num")
-    checkedDF
-  }
-
-
-
-  // 检查是否有重复数据
-  // 场景1+2 检查一行中全部的数据看是否有重复(或者检测一列中是否有重复的值)
-  def duplicateDataSampleInspection(sampleDF: DataFrame,num:String="num"): DataFrame = {
-    // 检测质检样本数据
-    val frame: DataFrame = sampleDF.withColumn("result", BasicKind.uplicateDataCheckUdf(col(num)))
-    // 表达式计算
-    val computedDf = frame
-    computedDf
-  }
-
-  // 检查是否有缺失的数据
-  def deletionDateSampleInspection(sampleDF: DataFrame): DataFrame = {
-    // 检测质检样本数据
-    val frame: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag")))
-    // 表达式计算
-    val computedDf = frame
-    computedDf
-  }
 }
 

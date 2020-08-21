@@ -24,7 +24,8 @@ object DataKind {
     val checkedDF = joinedDF.withColumn("result", compareUDF(cols))
     checkedDF
   }
-  // 场景2
+  // 场景2 -- 废弃
+  /**
   def compareSampleInspection(dropDuplicateDF1: DataFrame, dropDuplicateDF2: DataFrame, qtObject: String, scene: String): DataFrame = {
     val dsNames = qtObject.split(" ")
     val (dsName1, dsName2) = (dsNames(0), dsNames(1))
@@ -33,10 +34,13 @@ object DataKind {
     val checkedDF = joinedDF.withColumn("result", compareUDF(cols))
     checkedDF
   }
+   */
 
 
   // 数据集对比SQL
-  def dropDuplicateSQL(df: DataFrame, dsName: String) = {
+  def dropDuplicateSQL(spark: SparkSession, qtContent: String, dsName: String) = {
+    val df = spark.sql(qtContent)
+    //val df = spark.sql(qtContent).select(dsName)
     val rnCol = df.columns(0)
     val w = Window.partitionBy().orderBy(rnCol)
     val rnDF = df.withColumn("rn", row_number().over(w))
