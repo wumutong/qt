@@ -165,28 +165,32 @@ object BasicKind extends java.io.Serializable {
     }
     "select " + selectedColumns.dropRight(1) + " from merged_data"
   }
+
   // 空值判断SQL
   def nullSQL(qtContent: String, qtObject: String) = {
     val isnullStatement = ", isnull("  + qtObject + ") null_check_" + qtObject + " from"
     val sampleSQL = qtContent.replaceAll("from", isnullStatement)
     sampleSQL
   }
+
   //重复值重组Sql   Scene1 全部一行判定是否重复【除分区】
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String):String={
-    // 改写SQL
-    val currentDF = spark.sql(qtContent)
-    currentDF.createOrReplaceTempView("meta_duplicateData1")
+    // 创建临时表
+    spark.sql(qtContent).createOrReplaceTempView("meta_duplicateData1")
+
     val  RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
     RepeatSQL
   }
-  //重复值重组Sql
+
+  //重复值重组Sql  Scene2 判定指定一行 是否重复
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
-    // 改写SQL
-    val currentDF = spark.sql(qtContent)
-    currentDF.createOrReplaceTempView("meta_duplicateData2")
+    // 创建临时表
+    spark.sql(qtContent).createOrReplaceTempView("meta_duplicateData2")
+
     val  RepeatSQL  = "select *,count(1) over (partition by "+ qtObject +") as num from meta_duplicateData2"
     RepeatSQL
   }
+
   //缺失重组Sql  Scene指定一列分区进行判断
   def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 使用改写sql 创建临时表，生成指定的最大时间 和最小时间

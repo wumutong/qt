@@ -33,14 +33,14 @@ object Utils extends java.io.Serializable {
   def changeDateTimeFormat(min: String,max:String):(String,String)={
     val conMinMax = min+","+max
 
-    val conMinMaxFoemat = if(conMinMax.contains("-")){
+    val conMinMaxFormat = if(conMinMax.contains("-")){
       conMinMax.replace("-","")
     }else if(min.contains("/")){
       conMinMax.replace("/","")
     }else{
       conMinMax
     }
-    (conMinMaxFoemat.split(",")(0),conMinMaxFoemat.split(",")(1))
+    (conMinMaxFormat.split(",")(0),conMinMaxFormat.split(",")(1))
   }
 
   //得到对应得时间格式
@@ -48,7 +48,7 @@ object Utils extends java.io.Serializable {
     var flag = "month"
     var formatStr = "yyyyMM"
 
-     if (minFormat.length == 8 && maxFormat.length == 8) {
+    if (minFormat.length == 8 && maxFormat.length == 8) {
       flag = "day"
       formatStr += "dd"
     } else {
@@ -58,7 +58,6 @@ object Utils extends java.io.Serializable {
 
     (new SimpleDateFormat(formatStr),flag)
   }
-
 
   //获取相关时间顺序数组
   def getDateTimeSeq(min:String,max:String): ArrayBuffer[String] ={
@@ -91,6 +90,5 @@ object Utils extends java.io.Serializable {
     }
     arrayDate
   }
-
 }
 
