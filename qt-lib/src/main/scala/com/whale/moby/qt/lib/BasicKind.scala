@@ -142,8 +142,6 @@ object BasicKind extends java.io.Serializable {
     computedDf
   }
 
-
-
   // 特定场景处理
   // 波动比SQL
   def waveSQL(spark: SparkSession, qtContent: String, qtObject: String, dsDate: String) = {
@@ -181,7 +179,7 @@ object BasicKind extends java.io.Serializable {
     val  RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
     RepeatSQL
   }
-  //重复值重组Sql   Scene2 指定一列判断
+  //重复值重组Sql
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 改写SQL
     val currentDF = spark.sql(qtContent)
@@ -191,39 +189,21 @@ object BasicKind extends java.io.Serializable {
   }
   //缺失重组Sql  Scene指定一列分区进行判断
   def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
-    // 改写SQL
-    val currentDF = spark.sql(qtContent)
-    currentDF.createOrReplaceTempView("meta_deletionDate")
-    val RepeatSQL =   "select min("+qtObject+") as mins,max("+qtObject+") as maxs from meta_deletionDate"
+    // 使用改写sql 创建临时表，生成指定的最大时间 和最小时间
+    spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
+    val RepeatDF: DataFrame = spark.sql( "select min("+qtObject+") as mins,max("+qtObject+") as maxs from meta_deletionDate")
 
-    val RepeatDF: DataFrame = spark.sql(RepeatSQL)
     //获取场景3 单列时间的最大时间，最小时间
     val stringsMin: Array[String] = RepeatDF.select("mins").collect().map(_ (0).toString)
     val mins: String = stringsMin(0)
     val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
     val maxs: String = stringsMax(0)
-    // 转换格式 , 应对所取格式
-    val minFormat = Utils.changeDateTimeFormat(mins,maxs)._1
-    val maxFormat = Utils.changeDateTimeFormat(mins,maxs)._2
     //创建相关基列列表
-    val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(minFormat, maxFormat).map(x => {
+    val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(Utils.changeDateTimeFormat(mins,maxs)._1, Utils.changeDateTimeFormat(mins,maxs)._2).map(x => {
       (x.toInt, 1)
     })
-    //缺失检查
-    //判定缺失
-    def deletionDateInspection(RepeatDF:DataFrame):DataFrame={
-      val checkedDF: DataFrame = BasicKind.deletionDateSampleInspection(RepeatDF)
-      checkedDF
-    }
-    //重复值检查
-    //判定重复
-    def duplicateDataInspection(RepeatDF:DataFrame):DataFrame={
-      val checkedDF: DataFrame = BasicKind.duplicateDataSampleInspection(RepeatDF,"num")
-      checkedDF
-    }
-    //创建 针对基列的 dateFrame
-    val frameBase: DataFrame = spark.createDataFrame(dateTuple).toDF("dateTag", "tags")
-    frameBase.createOrReplaceTempView("baseTable")
+    //创建 针对基列的 临时表
+    spark.createDataFrame(dateTuple).toDF("dateTag", "tags").createOrReplaceTempView("baseTable")
     //判定sql  如果 tags=0 即该天为缺失
     val marginSql: String =
       "select step1.dateTag as dateTag,count(step2.date2) as tag" +
@@ -232,10 +212,8 @@ object BasicKind extends java.io.Serializable {
         "left join (select distinct" + qtObject +" as date2 from meta_deletionDate) step2" +
         "on step1.dateTag = step2.date2" +
         "group by step1.dateTag"
-
     marginSql
   }
-
 
 }
 
