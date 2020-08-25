@@ -63,35 +63,27 @@ object Utils extends java.io.Serializable {
   //获取相关时间顺序数组
   def getDateTimeSeq(min:String,max:String): ArrayBuffer[String] ={
     val arrayDate = new ArrayBuffer[String]()
-
-    val flag  = Utils.getDateFormat(min,max)._2
     val dateFormat: SimpleDateFormat = Utils.getDateFormat(min, max)._1
-    val dateBegin: Date = dateFormat.parse(min)
-    val dateEnd: Date = dateFormat.parse(max)
-
 
     val calendarBegin: Calendar = Calendar.getInstance()
     val calendarEnd: Calendar = Calendar.getInstance()
 
-    calendarBegin.setTime(dateBegin)
-    calendarEnd.setTime(dateEnd)
+    calendarBegin.setTime(dateFormat.parse(min))
+    calendarEnd.setTime(dateFormat.parse(max))
 
     // 计算日期间隔毫秒数
     val diff = calendarEnd.getTimeInMillis() - calendarBegin.getTimeInMillis()
 
-
-    if(flag=="month" || flag == "day"){
+    if(Utils.getDateFormat(min,max)._2 =="month" || Utils.getDateFormat(min,max)._2 == "day"){
       // 计算日期间隔天数
-      val diffDay = (diff / (1000 * 60 * 60 * 24)).toInt
-      for (d <- 0 to diffDay) {
+      for (d <- 0 to (diff / (1000 * 60 * 60 * 24)).toInt) {
         // 日期转化成"yyyyMMdd"
         arrayDate.append(dateFormat.format(calendarBegin.getTime()))
         calendarBegin.add(Calendar.DATE, 1)
       }
     }else{
       // 计算日期相隔的小时
-      val diffH = (diff / (1000 * 60 * 60)).toInt
-      for (d <- 0 to diffH) {
+      for (d <- 0 to (diff / (1000 * 60 * 60)).toInt) {
         // 日期转化成"yyyyMMdd"
         arrayDate.append(dateFormat.format(calendarBegin.getTime()))
         calendarBegin.add(Calendar.HOUR, 1)

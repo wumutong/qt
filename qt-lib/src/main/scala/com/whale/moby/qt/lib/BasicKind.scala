@@ -229,7 +229,7 @@ object BasicKind extends java.io.Serializable {
       "select step1.dateTag as dateTag,count(step2.date2) as tag" +
         "from " +
         "(select dateTag from baseTable) step1 " +
-        "left join (select distinct" + qtObject+" as date2 from meta_deletionDate) step2" +
+        "left join (select distinct" + qtObject +" as date2 from meta_deletionDate) step2" +
         "on step1.dateTag = step2.date2" +
         "group by step1.dateTag"
 
