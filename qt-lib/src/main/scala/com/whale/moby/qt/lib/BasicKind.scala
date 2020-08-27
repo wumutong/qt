@@ -39,13 +39,13 @@ object BasicKind extends java.io.Serializable {
   val outliersCheckUDF = udf(outliersCheck _)
   // 重复值检测 - 字符型
   private def DuplicateDataCheck(y: String): String = {
-    val checkResult = if (y == "1") "通过" else "不通过"
+    val checkResult = if (y == "1") "不重复" else "重复"
     checkResult
   }
   val uplicateDataCheckUdf = udf(DuplicateDataCheck _)
   // 缺失值检测 - 字符型
   private def DeletionDataCheck(y:String):String = {
-    val checkResult = if (y == "0") "不通过" else "通过"
+    val checkResult = if (y == "0") "缺失" else "不缺失"
     checkResult
   }
   val deletionDataCheck = udf(DeletionDataCheck _)
@@ -128,7 +128,7 @@ object BasicKind extends java.io.Serializable {
   // 场景1+2 检查一行中全部的数据看是否有重复(或者检测一列中是否有重复的值)
   def duplicateDataSampleInspection(sampleDF: DataFrame,num:String="num"): DataFrame = {
     // 检测质检样本数据
-    val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.uplicateDataCheckUdf(col(num)))
+    val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.uplicateDataCheckUdf(col(num))).withColumn("basis", judgmentUDF(col("result")))
     // 表达式计算
     computedDf
   }
@@ -136,7 +136,7 @@ object BasicKind extends java.io.Serializable {
   // 缺失值样本送检
   def deletionDateSampleInspection(sampleDF: DataFrame): DataFrame = {
     // 检测质检样本数据
-    val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag")))
+    val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag"))).withColumn("basis", judgmentUDF(col("result")))
     // 表达式计算
     computedDf
   }
@@ -167,12 +167,14 @@ object BasicKind extends java.io.Serializable {
     }
     "select " + selectedColumns.dropRight(1) + " from merged_data"
   }
+
   // 空值判断SQL
   def nullSQL(qtContent: String, qtObject: String) = {
     val isnullStatement = ", isnull("  + qtObject + ") null_check_" + qtObject + " from"
     val sampleSQL = qtContent.replaceAll("from", isnullStatement)
     sampleSQL
   }
+
   //重复值重组Sql   Scene1 全部一行判定是否重复【除分区】
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String):String={
     // 创建临时表
@@ -181,6 +183,7 @@ object BasicKind extends java.io.Serializable {
     val  RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
     RepeatSQL
   }
+
   //重复值重组Sql  Scene2 判定指定一行 是否重复
   def duplicateDataCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 创建临时表
@@ -189,6 +192,7 @@ object BasicKind extends java.io.Serializable {
     val  RepeatSQL  = "select *,count(1) over (partition by "+ qtObject +") as num from meta_duplicateData2"
     RepeatSQL
   }
+
   //缺失重组Sql  Scene指定一列分区进行判断
   def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
     // 使用改写sql 创建临时表，生成指定的最大时间 和最小时间

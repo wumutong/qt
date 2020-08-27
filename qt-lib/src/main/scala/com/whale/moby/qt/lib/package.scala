@@ -79,6 +79,8 @@ package object lib {
     case "空值" => "数据为NULL或NaN!!!"
     case "异常值" => " 超过了上四分位+1.5倍IQR距离/下四分位-1.5倍IQR距离!!!"
     case "不同" => "两个结果集当前行对应的数据不完全相同!!!"
+    case "重复" => "结果集有重复!!!"
+    case "缺失" => "结果集有缺失!!!"
     case _ => ""
   }
   val judgmentUDF = udf(judgment _)
@@ -86,7 +88,7 @@ package object lib {
 
   // 整体评估  -- 不合格数量占总数量百分比高于10%则判定整体不通过。
   def overallAssessment(checkedDF: DataFrame) = {
-    val unqualifiedNum = checkedDF.filter("result in ('值域检测不通过','空值','异常值', '不同', '不通过')").count.toDouble
+    val unqualifiedNum = checkedDF.filter("result in ('值域检测不通过','空值','异常值', '不同', '重复', '缺失')").count.toDouble
     val totalNum = checkedDF.count.toDouble
     val unqualifiedPercent = unqualifiedNum/totalNum
     val checkedSummary = if (unqualifiedPercent <= 0.1 ) "本次质检通过" else "本次质检不通过"
