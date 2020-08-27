@@ -18,14 +18,15 @@ object Utils extends java.io.Serializable {
     val qin  = qtMethod + "-" + scene + "-" + unixTimestamp
     (unixTimestamp, today, qin)
   }
+
   // 转换样本数据为JSON格式
   def toJSON(checkedDF: DataFrame) = {
-    val columns = checkedDF.drop("result").columns
+    val columns = checkedDF.drop("result").drop("basis").columns
     var jsonColumns: String = "to_json(struct("
     for (i <- 0 until columns.length){
       jsonColumns += columns(i) + ","
     }
-    val jsonSQL = jsonColumns.dropRight(1) + ")) qt_sample, result qt_result"
+    val jsonSQL = jsonColumns.dropRight(1) + ")) qt_sample, result qt_result, basis judgment_basis"
     jsonSQL
   }
 
@@ -90,5 +91,7 @@ object Utils extends java.io.Serializable {
     }
     arrayDate
   }
+
+
 }
 

@@ -21,7 +21,7 @@ object DataKind {
     val columns = dropDuplicateDF1.drop("rn_" + dsName1).columns
     val joinedDF = dropDuplicateDF1.join(dropDuplicateDF2, columns, "full")
     val cols = array("rn_" + dsName1, "rn_" + dsName2)
-    val checkedDF = joinedDF.withColumn("result", compareUDF(cols))
+    val checkedDF = joinedDF.withColumn("result", compareUDF(cols)).withColumn("basis", judgmentUDF(col("result")))
     checkedDF
   }
   // 场景2 -- 废弃

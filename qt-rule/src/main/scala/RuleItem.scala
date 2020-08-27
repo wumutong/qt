@@ -1,8 +1,10 @@
 package com.whale.moby.qt.rule
 
+
 import com.alibaba.fastjson.JSON
-import org.apache.spark.sql.SparkSession
 import com.whale.moby.qt.lib._
+import org.apache.spark.sql.SparkSession
+
 
 object RuleItem {
 

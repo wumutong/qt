@@ -1,9 +1,11 @@
 package com.whale.moby.qt.rule
 
+
 import com.whale.moby.qt.lib.readMySQL
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+
 
 object RuleApplication {
   def main(args: Array[String]): Unit = {
@@ -17,6 +19,7 @@ object RuleApplication {
       .config(conf)
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
 
     // 读取质检规则

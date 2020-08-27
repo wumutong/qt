@@ -2,6 +2,7 @@ package com.whale.moby.qt
 
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -72,10 +73,20 @@ package object lib {
     case _ => null
   }
 
+  // 判定依据
+  def judgment(x: String): String = x match {
+    case "值域检测不通过" => " 不在值域范围内!!！"
+    case "空值" => "数据为NULL或NaN!!!"
+    case "异常值" => " 超过了上四分位+1.5倍IQR距离/下四分位-1.5倍IQR距离!!!"
+    case "不同" => "两个结果集当前行对应的数据不完全相同!!!"
+    case _ => ""
+  }
+  val judgmentUDF = udf(judgment _)
+
 
   // 整体评估  -- 不合格数量占总数量百分比高于10%则判定整体不通过。
   def overallAssessment(checkedDF: DataFrame) = {
-    val unqualifiedNum = checkedDF.filter("result in ('值域检测不通过','空值','异常值', '不同')").count.toDouble
+    val unqualifiedNum = checkedDF.filter("result in ('值域检测不通过','空值','异常值', '不同', '不通过')").count.toDouble
     val totalNum = checkedDF.count.toDouble
     val unqualifiedPercent = unqualifiedNum/totalNum
     val checkedSummary = if (unqualifiedPercent <= 0.1 ) "本次质检通过" else "本次质检不通过"
