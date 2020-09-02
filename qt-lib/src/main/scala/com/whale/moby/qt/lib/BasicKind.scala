@@ -137,6 +137,8 @@ object BasicKind extends java.io.Serializable {
   def deletionDateSampleInspection(sampleDF: DataFrame): DataFrame = {
     // 检测质检样本数据
     val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag"))).withColumn("basis", judgmentUDF(col("result")))
+    //todo
+    println("创建DateFrame")
     // 表达式计算
     computedDf
   }
@@ -204,6 +206,10 @@ object BasicKind extends java.io.Serializable {
     val mins: String = stringsMin(0)
     val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
     val maxs: String = stringsMax(0)
+
+    //todo
+    println(mins+"----"+maxs)
+
     //创建相关基列列表
     val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(Utils.changeDateTimeFormat(mins,maxs)._1, Utils.changeDateTimeFormat(mins,maxs)._2).map(x => {
       (x.toInt, 1)
@@ -212,17 +218,14 @@ object BasicKind extends java.io.Serializable {
     spark.createDataFrame(dateTuple).toDF("dateTag", "tags").createOrReplaceTempView("baseTable")
     //判定sql  如果 tags=0 即该天为缺失
     val marginSql: String =
-      "select step1.dateTag as dateTag,count(step2.date2) as tag" +
+      "select step1.dateTag as dateTag,count(step2.date2) as tag " +
         "from " +
         "(select dateTag from baseTable) step1 " +
-        "left join (select distinct " + qtObject +" as date2 from meta_deletionDate) step2" +
-        "on step1.dateTag = step2.date2" +
+        "left join (select distinct " + qtObject +" as date2 from meta_deletionDate) step2 " +
+        "on step1.dateTag = step2.date2 " +
         "group by step1.dateTag"
     marginSql
   }
-
-
-
 
 
 

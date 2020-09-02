@@ -55,6 +55,9 @@ object RuleItem {
                 ,'""" + dateTimeTuple._2 + """' qt_date
                 ,'""" + dsDate + """' ds_date
                 from checked_detail_""" + rule_item_id
+    //todo
+    println(detailSQL+"------执行该sql")
+
     val detailDF = spark.sql(detailSQL)
     // 明细数据入库
     writeMySQL(detailDF, "qt_detail")
@@ -76,6 +79,9 @@ object RuleItem {
                  ,"""" + dateTimeTuple._2 + """" qt_date
                  ,"""" + dsDate + """" ds_date
                  """
+
+    println(summarySql+"---执行该sql")
+
     val summaryDF = spark.sql(summarySql)
     // 汇总数据入库
     writeMySQL(summaryDF, "qt_summary")
