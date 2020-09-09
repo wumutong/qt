@@ -198,18 +198,23 @@ object BasicKind extends java.io.Serializable {
   }
 
   //缺失重组Sql  Scene指定一列分区进行判断
-  def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
-    // 使用改写sql 创建临时表，生成指定的最大时间 和最小时间
-    spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
-    val RepeatDF: DataFrame = spark.sql( "select min("+qtObject+") as mins,max("+qtObject+") as maxs from meta_deletionDate")
+  def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String,startDate: String,endDate: String):String={
 
-    //获取场景3 单列时间的最大时间，最小时间
-    val stringsMin: Array[String] = RepeatDF.select("mins").collect().map(_ (0).toString)
-    val mins: String = stringsMin(0)
-    val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
-    val maxs: String = stringsMax(0)
-    //创建相关基列列表
-    val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(Utils.changeDateTimeFormat(mins,maxs)._1, Utils.changeDateTimeFormat(mins,maxs)._2).map(x => {
+    /**
+     * 废弃
+     * 使用改写sql 创建临时表，生成指定的最大时间 和最小时间
+     * spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
+     * val RepeatDF: DataFrame = spark.sql( "select min("+qtObject+") as mins,max("+qtObject+") as maxs from meta_deletionDate")
+     *
+     * 获取场景3 单列时间的最大时间，最小时间
+     * val stringsMin: Array[String] = RepeatDF.select("mins").collect().map(_ (0).toString)
+     * val mins: String = stringsMin(0)
+     * val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
+     * val maxs: String = stringsMax(0)
+     */
+
+    //使用最大时间和最小时间创建相关基列列表
+    val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(Utils.changeDateTimeFormat(startDate,endDate)._1, Utils.changeDateTimeFormat(startDate,endDate)._2).map(x => {
       (x.toInt, 1)
     })
     //创建 针对基列的 临时表

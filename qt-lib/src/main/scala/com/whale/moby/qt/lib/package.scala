@@ -49,7 +49,7 @@ package object lib {
     // 作者：沐桐
     case ("BasicKind", "duplicateDataCheck","scene1") => (BasicKind.duplicateDataCheckSql(spark,qtContent), qtContent)
     case ("BasicKind", "duplicateDataCheck","scene2") => (BasicKind.duplicateDataCheckSql(spark,qtContent,qtObject), qtContent)
-    case ("BasicKind", "deletionDateCheck","scene1") => (BasicKind.deletionDateCheckSql(spark,qtContent,qtObject) , qtContent)
+    case ("BasicKind", "deletionDateCheck","scene1") => (BasicKind.deletionDateCheckSql(spark,qtContent,qtObject, startDate: String,endDate: String) , qtContent)
     // 通用
     case _ => (s"$qtContent", s"$qtContent")
   }
