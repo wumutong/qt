@@ -219,6 +219,8 @@ object BasicKind extends java.io.Serializable {
     })
     //创建 针对基列的 临时表
     spark.createDataFrame(dateTuple).toDF("dateTag", "tags").createOrReplaceTempView("baseTable")
+
+    spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
     //判定sql  如果 tags=0 即该天为缺失
     val marginSql: String =
       "select step1.dateTag as dateTag,count(step2.date2) as tag " +
