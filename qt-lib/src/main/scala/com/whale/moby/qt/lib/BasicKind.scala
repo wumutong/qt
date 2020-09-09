@@ -137,22 +137,22 @@ object BasicKind extends java.io.Serializable {
   def deletionDateSampleInspection(sampleDF: DataFrame): DataFrame = {
     // 检测质检样本数据
     val computedDf: DataFrame = sampleDF.withColumn("result", BasicKind.deletionDataCheck(col("tag"))).withColumn("basis", judgmentUDF(col("result")))
-    //todo
-    println("创建DateFrame")
     // 表达式计算
     computedDf
   }
+
 
 
   /**
    * 特定场景处理
    */
   // 波动比SQL
-  def waveSQL(spark: SparkSession, qtContent: String, qtObject: String, dsDate: String) = {
+  def waveSQL(spark: SparkSession, qtContent: String, qtObject: String, startDate: String, endDate: String) = {
     // 改写SQL
     val currentDF = spark.sql(qtContent)
-    val aDayAgo = (dsDate.toLong -1).toString
-    val aDayAgoContent = qtContent.replaceAll(dsDate, aDayAgo)
+    val startDateAgo = (startDate.toLong -1).toString
+    val endDateAgo = (endDate.toLong -1).toString
+    val aDayAgoContent = qtContent.replaceAll(startDate, startDateAgo).replaceAll(endDate, endDateAgo)
     val aDayAgoDF = spark.sql(aDayAgoContent)
     // 预检处理
     val w = Window.partitionBy().orderBy(qtObject)
@@ -167,14 +167,16 @@ object BasicKind extends java.io.Serializable {
     for (i <- 0 until columns.length){
       selectedColumns += columns(i) + ","
     }
-    "select " + selectedColumns.dropRight(1) + " from merged_data"
+    val dropedRight = selectedColumns.dropRight(1)
+    //"select " + selectedColumns.dropRight(1) + " from merged_data"
+    s"select $dropedRight from merged_data"
   }
 
   // 空值判断SQL
   def nullSQL(qtContent: String, qtObject: String) = {
     val isnullStatement = ", isnull("  + qtObject + ") null_check_" + qtObject + " from"
     val sampleSQL = qtContent.replaceAll("from", isnullStatement)
-    sampleSQL
+    s"$sampleSQL"
   }
 
   //重复值重组Sql   Scene1 全部一行判定是否重复【除分区】
@@ -182,7 +184,7 @@ object BasicKind extends java.io.Serializable {
     // 创建临时表
     spark.sql(qtContent).createOrReplaceTempView("meta_duplicateData1")
 
-    val  RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
+    val RepeatSQL  = "select *,count(1) over(partition by concat(*)) as num from meta_duplicateData1"
     RepeatSQL
   }
 
@@ -206,10 +208,6 @@ object BasicKind extends java.io.Serializable {
     val mins: String = stringsMin(0)
     val stringsMax: Array[String] = RepeatDF.select("maxs").collect().map(_ (0).toString)
     val maxs: String = stringsMax(0)
-
-    //todo
-    println(mins+"----"+maxs)
-
     //创建相关基列列表
     val dateTuple: ArrayBuffer[(Int, Int)] = Utils.getDateTimeSeq(Utils.changeDateTimeFormat(mins,maxs)._1, Utils.changeDateTimeFormat(mins,maxs)._2).map(x => {
       (x.toInt, 1)
@@ -226,7 +224,6 @@ object BasicKind extends java.io.Serializable {
         "group by step1.dateTag"
     marginSql
   }
-
 
 
 }

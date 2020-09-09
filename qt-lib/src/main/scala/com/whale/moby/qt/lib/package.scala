@@ -42,15 +42,16 @@ package object lib {
 
 
   // 匹配/路由SQL -- 所有类
-  def matchSQL(x: (String, String, String), spark: SparkSession, qtContent: String, qtObject: String, dsDate: String, qtContent2: String = "default"): (String, String) = x match {
-    case ("BasicKind", "rangeCheck", "wave") => (BasicKind.waveSQL(spark, qtContent, qtObject, dsDate), qtContent)
+  def matchSQL(x: (String, String, String), spark: SparkSession, qtContent: String, qtObject: String, startDate: String,endDate: String, qtContent2: String = "default"): (String, String) = x match {
+    case ("BasicKind", "rangeCheck", "wave") => (BasicKind.waveSQL(spark, qtContent, qtObject, startDate, endDate), qtContent)
     case ("BasicKind", "nullCheck", "scene1") => (BasicKind.nullSQL(qtContent, qtObject), qtContent)
     case ("DataKind", "compareCheck", "scene1") => (DataKind.dropDuplicateSQL(spark, qtContent, qtObject.split(" ")(0)), DataKind.dropDuplicateSQL(spark, qtContent2, qtObject.split(" ")(1)))
     // 作者：沐桐
     case ("BasicKind", "duplicateDataCheck","scene1") => (BasicKind.duplicateDataCheckSql(spark,qtContent), qtContent)
     case ("BasicKind", "duplicateDataCheck","scene2") => (BasicKind.duplicateDataCheckSql(spark,qtContent,qtObject), qtContent)
     case ("BasicKind", "deletionDateCheck","scene1") => (BasicKind.deletionDateCheckSql(spark,qtContent,qtObject) , qtContent)
-    case _ => (qtContent, qtContent)
+    // 通用
+    case _ => (s"$qtContent", s"$qtContent")
   }
 
 
