@@ -61,7 +61,7 @@ object Utils extends java.io.Serializable {
   }
 
   //获取相关时间顺序数组
-  def getDateTimeSeq(min:String,max:String): ArrayBuffer[String] ={
+  def getDateTimeSeq(min:String,max:String,selfString : String = "1213=1231,13454,4654|jishias,dsaiojdasio"): ArrayBuffer[String] ={
     val arrayDate = new ArrayBuffer[String]()
     val dateFormat: SimpleDateFormat = Utils.getDateFormat(min, max)._1
 
@@ -77,6 +77,7 @@ object Utils extends java.io.Serializable {
     if(Utils.getDateFormat(min,max)._2 =="month" || Utils.getDateFormat(min,max)._2 == "day"){
       // 计算日期间隔天数
       for (d <- 0 to (diff / (1000 * 60 * 60 * 24)).toInt) {
+
         // 日期转化成"yyyyMMdd"
         arrayDate.append(dateFormat.format(calendarBegin.getTime()))
         calendarBegin.add(Calendar.DATE, 1)

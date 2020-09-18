@@ -3,9 +3,11 @@ package com.whale.moby.qt.lib
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+
 import scala.collection.mutable.ListBuffer
 import javax.script.ScriptEngineManager
 import org.apache.spark.sql.expressions.Window
+
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -198,7 +200,7 @@ object BasicKind extends java.io.Serializable {
   }
 
   //缺失重组Sql  Scene指定一列分区进行判断
-  def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String,startDate: String,endDate: String):String={
+  def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String,startDate: String,endDate: String , selfArr:String = "577,1215"):String={
 
     /**
      * 废弃
@@ -220,7 +222,11 @@ object BasicKind extends java.io.Serializable {
     //创建 针对基列的 临时表
     spark.createDataFrame(dateTuple).toDF("dateTag", "tags").createOrReplaceTempView("baseTable")
 
+    //创建对应的指标临时表
     spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
+
+
+
     //判定sql  如果 tags=0 即该天为缺失
     val marginSql: String =
       "select step1.dateTag as dateTag,count(step2.date2) as tag " +
