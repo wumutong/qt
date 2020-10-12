@@ -239,5 +239,21 @@ object BasicKind extends java.io.Serializable {
   }
 
 
+//  //缺失重组Sql  Scene指定一列分区进行判断   只查询一天数据
+//  def deletionDateCheckSql(spark:SparkSession,qtContent:String,qtObject:String):String={
+//
+//    //创建 临时表
+//    spark.sql(qtContent).createOrReplaceTempView("meta_deletionDate")
+//
+//    //判定sql  如果 tags=0 即该天为缺失
+//    val marginSql: String =
+//      "select "+qtObject+" as dateTag, count(1) as tag " +
+//        "from " +
+//        "meta_deletionDate " +
+//        "group by "+ qtObject
+//
+//    marginSql
+//  }
+
 }
 
