@@ -94,5 +94,22 @@ object Utils extends java.io.Serializable {
   }
 
 
+  //获取相关时间日期  = 当前日期 - 指定天数
+  def getSubNumDate(curentDate:String,optDateNum:Int) ={
+
+    //创建时间构造器
+    val calendar: Calendar = Calendar.getInstance()
+    val dateFormat =  new SimpleDateFormat("yyyyMMdd")
+
+    //进行时间相关计算操作
+    calendar.setTime(dateFormat.parse(curentDate))
+    calendar.add(Calendar.DATE, optDateNum)
+
+    val newDate = dateFormat.format(calendar.getTime())
+
+    newDate
+  }
+
+
 }
 
